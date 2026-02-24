@@ -19,6 +19,7 @@ pub enum DataKey {
     GroupPaymentHistory(BytesN<32>),
     GroupDistributionHistory(BytesN<32>),
     MemberDistributionHistory(Address),
+    MemberGroupEarnings(Address, BytesN<32>),
     IsPaused,
 }
 
@@ -1143,6 +1144,14 @@ pub fn distribute(
                 address: member.address.clone(),
                 amount: share,
             });
+
+            // Update running total for member group earnings
+            let earnings_key = DataKey::MemberGroupEarnings(member.address.clone(), id.clone());
+            let current_earnings: i128 = env.storage().persistent().get(&earnings_key).unwrap_or(0);
+            env.storage()
+                .persistent()
+                .set(&earnings_key, &(current_earnings + share));
+            bump_persistent(&env, &earnings_key);
         }
     }
 
@@ -1170,6 +1179,15 @@ pub fn distribute(
     .publish(&env);
 
     Ok(())
+}
+
+pub fn get_member_earnings(env: Env, member: Address, group_id: BytesN<32>) -> i128 {
+    let key = DataKey::MemberGroupEarnings(member, group_id);
+    let earnings: i128 = env.storage().persistent().get(&key).unwrap_or(0);
+    if earnings > 0 {
+        bump_persistent(&env, &key);
+    }
+    earnings
 }
 
 fn validate_members(members: &Vec<GroupMember>) -> Result<(), Error> {
