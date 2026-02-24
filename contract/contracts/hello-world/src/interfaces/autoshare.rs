@@ -181,4 +181,7 @@ pub trait AutoShareTrait {
 
     /// Returns all contributions made by a specific user.
     fn get_user_contributions(env: Env, user: Address) -> Vec<FundraisingContribution>;
+
+    /// Starts a fundraising campaign for a group.
+    fn start_fundraising(env: Env, id: BytesN<32>, caller: Address, target_amount: i128);
 }

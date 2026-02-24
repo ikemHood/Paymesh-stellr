@@ -1,7 +1,8 @@
 use crate::base::errors::Error;
 use crate::base::events::{
     AdminTransferred, AutoshareCreated, AutoshareUpdated, ContractPaused, ContractUnpaused,
-    Distribution, GroupActivated, GroupDeactivated, GroupDeleted, GroupNameUpdated, Withdrawal,
+    Distribution, FundraisingStarted, GroupActivated, GroupDeactivated, GroupDeleted,
+    GroupNameUpdated, Withdrawal,
 };
 use crate::base::types::{
     AutoShareDetails, DistributionHistory, FundraisingConfig, FundraisingContribution, GroupMember,
@@ -1328,5 +1329,76 @@ fn validate_members(members: &Vec<GroupMember>) -> Result<(), Error> {
     if total_percentage != 100 {
         return Err(Error::InvalidTotalPercentage);
     }
+    Ok(())
+}
+
+pub fn start_fundraising(
+    env: Env,
+    id: BytesN<32>,
+    caller: Address,
+    target_amount: i128,
+) -> Result<(), Error> {
+    caller.require_auth();
+
+    // Check if contract is paused
+    if get_paused_status(&env) {
+        return Err(Error::ContractPaused);
+    }
+
+    // Verify group exists
+    let key = DataKey::AutoShare(id.clone());
+    let details: AutoShareDetails = env
+        .storage()
+        .persistent()
+        .get(&key)
+        .ok_or(Error::NotFound)?;
+    bump_persistent(&env, &key);
+
+    // Verify caller is the group creator
+    if details.creator != caller {
+        return Err(Error::Unauthorized);
+    }
+
+    // Verify group is active
+    if !details.is_active {
+        return Err(Error::GroupInactive);
+    }
+
+    // Check no active fundraiser already exists for this group
+    let fundraising_key = DataKey::GroupFundraising(id.clone());
+    let existing_fundraising: Option<FundraisingConfig> =
+        env.storage().persistent().get(&fundraising_key);
+
+    if let Some(config) = existing_fundraising {
+        if config.is_active {
+            return Err(Error::FundraisingAlreadyActive);
+        }
+        bump_persistent(&env, &fundraising_key);
+    }
+
+    // Validate target_amount > 0
+    if target_amount <= 0 {
+        return Err(Error::InvalidAmount);
+    }
+
+    // Store a new FundraisingConfig
+    let fundraising_config = FundraisingConfig {
+        target_amount,
+        total_raised: 0,
+        is_active: true,
+    };
+
+    env.storage()
+        .persistent()
+        .set(&fundraising_key, &fundraising_config);
+    bump_persistent(&env, &fundraising_key);
+
+    // Emit a FundraisingStarted event
+    FundraisingStarted {
+        group_id: id,
+        target_amount,
+    }
+    .publish(&env);
+
     Ok(())
 }

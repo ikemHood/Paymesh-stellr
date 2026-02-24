@@ -28,4 +28,5 @@ pub enum Error {
     MemberNotFound = 22,
     GroupNotDeactivated = 23,
     EmptyName = 24,
+    FundraisingAlreadyActive = 32,
 }

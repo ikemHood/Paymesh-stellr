@@ -312,6 +312,11 @@ impl AutoShareContract {
     ) -> Vec<base::types::FundraisingContribution> {
         autoshare_logic::get_user_contributions(env, user)
     }
+
+    /// Starts a fundraising campaign for a group.
+    pub fn start_fundraising(env: Env, id: BytesN<32>, caller: Address, target_amount: i128) {
+        autoshare_logic::start_fundraising(env, id, caller, target_amount).unwrap();
+    }
 }
 
 // 3. Link the tests (Requirement: Unit Tests)
@@ -350,3 +355,7 @@ mod pagination_test;
 #[cfg(test)]
 #[path = "tests/fundraising_test.rs"]
 mod fundraising_test;
+
+#[cfg(test)]
+#[path = "tests/fundraising_start_test.rs"]
+mod fundraising_start_test;

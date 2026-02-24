@@ -85,3 +85,10 @@ pub struct GroupNameUpdated {
     pub updater: Address,
     pub id: BytesN<32>,
 }
+#[contractevent(data_format = "single-value")]
+#[derive(Clone)]
+pub struct FundraisingStarted {
+    #[topic]
+    pub group_id: BytesN<32>,
+    pub target_amount: i128,
+}
