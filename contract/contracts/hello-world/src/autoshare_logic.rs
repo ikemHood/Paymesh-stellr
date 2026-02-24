@@ -4,7 +4,8 @@ use crate::base::events::{
     Distribution, GroupActivated, GroupDeactivated, GroupDeleted, GroupNameUpdated, Withdrawal,
 };
 use crate::base::types::{
-    AutoShareDetails, DistributionHistory, GroupMember, MemberAmount, PaymentHistory,
+    AutoShareDetails, DistributionHistory, FundraisingConfig, GroupMember, MemberAmount,
+    PaymentHistory,
 };
 use soroban_sdk::{contracttype, token, Address, BytesN, Env, String, Vec};
 
@@ -20,6 +21,7 @@ pub enum DataKey {
     GroupDistributionHistory(BytesN<32>),
     MemberDistributionHistory(Address),
     MemberGroupEarnings(Address, BytesN<32>),
+    GroupFundraising(BytesN<32>),
     IsPaused,
 }
 
@@ -1268,6 +1270,21 @@ pub fn get_member_earnings(env: Env, member: Address, group_id: BytesN<32>) -> i
         bump_persistent(&env, &key);
     }
     earnings
+}
+
+pub fn get_fundraising_status(env: Env, id: BytesN<32>) -> FundraisingConfig {
+    let key = DataKey::GroupFundraising(id);
+    let result: Option<FundraisingConfig> = env.storage().persistent().get(&key);
+    if let Some(config) = result {
+        bump_persistent(&env, &key);
+        config
+    } else {
+        FundraisingConfig {
+            target_amount: 0,
+            total_raised: 0,
+            is_active: false,
+        }
+    }
 }
 
 fn validate_members(members: &Vec<GroupMember>) -> Result<(), Error> {

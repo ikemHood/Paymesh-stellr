@@ -56,3 +56,11 @@ pub struct GroupPage {
     pub offset: u32,
     pub limit: u32,
 }
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FundraisingConfig {
+    pub target_amount: i128,
+    pub total_raised: i128,
+    pub is_active: bool,
+}

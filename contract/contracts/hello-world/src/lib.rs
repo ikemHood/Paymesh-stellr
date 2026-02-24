@@ -291,6 +291,11 @@ impl AutoShareContract {
     pub fn get_member_earnings(env: Env, member: Address, group_id: BytesN<32>) -> i128 {
         autoshare_logic::get_member_earnings(env, member, group_id)
     }
+
+    /// Returns the fundraising status for a group.
+    pub fn get_fundraising_status(env: Env, id: BytesN<32>) -> base::types::FundraisingConfig {
+        autoshare_logic::get_fundraising_status(env, id)
+    }
 }
 
 // 3. Link the tests (Requirement: Unit Tests)
@@ -325,3 +330,7 @@ mod earnings_test;
 #[cfg(test)]
 #[path = "tests/pagination_test.rs"]
 mod pagination_test;
+
+#[cfg(test)]
+#[path = "tests/fundraising_test.rs"]
+mod fundraising_test;
