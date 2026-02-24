@@ -15,7 +15,7 @@ fn test_get_fundraising_status_default() {
 
     assert_eq!(status.target_amount, 0);
     assert_eq!(status.total_raised, 0);
-    assert_eq!(status.is_active, false);
+    assert!(!status.is_active);
 }
 
 #[test]
@@ -41,5 +41,5 @@ fn test_get_fundraising_status_existing() {
 
     assert_eq!(status.target_amount, 1000);
     assert_eq!(status.total_raised, 500);
-    assert_eq!(status.is_active, true);
+    assert!(status.is_active);
 }
