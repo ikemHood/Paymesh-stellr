@@ -64,3 +64,13 @@ pub struct FundraisingConfig {
     pub total_raised: i128,
     pub is_active: bool,
 }
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FundraisingContribution {
+    pub group_id: BytesN<32>,
+    pub contributor: Address,
+    pub token: Address,
+    pub amount: i128,
+    pub timestamp: u64,
+}

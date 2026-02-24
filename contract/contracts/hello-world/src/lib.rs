@@ -296,6 +296,22 @@ impl AutoShareContract {
     pub fn get_fundraising_status(env: Env, id: BytesN<32>) -> base::types::FundraisingConfig {
         autoshare_logic::get_fundraising_status(env, id)
     }
+
+    /// Returns all contributions for a specific group.
+    pub fn get_group_contributions(
+        env: Env,
+        id: BytesN<32>,
+    ) -> Vec<base::types::FundraisingContribution> {
+        autoshare_logic::get_group_contributions(env, id)
+    }
+
+    /// Returns all contributions made by a specific user.
+    pub fn get_user_contributions(
+        env: Env,
+        user: Address,
+    ) -> Vec<base::types::FundraisingContribution> {
+        autoshare_logic::get_user_contributions(env, user)
+    }
 }
 
 // 3. Link the tests (Requirement: Unit Tests)

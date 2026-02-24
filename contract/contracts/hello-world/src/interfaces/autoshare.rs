@@ -1,6 +1,9 @@
 use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
-use crate::base::types::{AutoShareDetails, DistributionHistory, GroupMember, PaymentHistory};
+use crate::base::types::{
+    AutoShareDetails, DistributionHistory, FundraisingConfig, FundraisingContribution, GroupMember,
+    PaymentHistory,
+};
 
 /// AutoShareTrait defines the interface for the AutoShare contract.
 /// This trait serves as a formal specification that the AutoShareContract implementation
@@ -169,4 +172,13 @@ pub trait AutoShareTrait {
 
     /// Returns the total usages paid for a group.
     fn get_total_usages_paid(env: Env, id: BytesN<32>) -> u32;
+
+    /// Returns the fundraising status for a group.
+    fn get_fundraising_status(env: Env, id: BytesN<32>) -> FundraisingConfig;
+
+    /// Returns all contributions for a specific group.
+    fn get_group_contributions(env: Env, id: BytesN<32>) -> Vec<FundraisingContribution>;
+
+    /// Returns all contributions made by a specific user.
+    fn get_user_contributions(env: Env, user: Address) -> Vec<FundraisingContribution>;
 }

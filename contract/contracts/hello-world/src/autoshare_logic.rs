@@ -4,8 +4,8 @@ use crate::base::events::{
     Distribution, GroupActivated, GroupDeactivated, GroupDeleted, GroupNameUpdated, Withdrawal,
 };
 use crate::base::types::{
-    AutoShareDetails, DistributionHistory, FundraisingConfig, GroupMember, MemberAmount,
-    PaymentHistory,
+    AutoShareDetails, DistributionHistory, FundraisingConfig, FundraisingContribution, GroupMember,
+    MemberAmount, PaymentHistory,
 };
 use soroban_sdk::{contracttype, token, Address, BytesN, Env, String, Vec};
 
@@ -22,6 +22,8 @@ pub enum DataKey {
     MemberDistributionHistory(Address),
     MemberGroupEarnings(Address, BytesN<32>),
     GroupFundraising(BytesN<32>),
+    GroupContributions(BytesN<32>),
+    UserContributions(Address),
     IsPaused,
 }
 
@@ -1285,6 +1287,24 @@ pub fn get_fundraising_status(env: Env, id: BytesN<32>) -> FundraisingConfig {
             is_active: false,
         }
     }
+}
+
+pub fn get_group_contributions(env: Env, id: BytesN<32>) -> Vec<FundraisingContribution> {
+    let key = DataKey::GroupContributions(id);
+    let result: Option<Vec<FundraisingContribution>> = env.storage().persistent().get(&key);
+    if result.is_some() {
+        bump_persistent(&env, &key);
+    }
+    result.unwrap_or(Vec::new(&env))
+}
+
+pub fn get_user_contributions(env: Env, user: Address) -> Vec<FundraisingContribution> {
+    let key = DataKey::UserContributions(user);
+    let result: Option<Vec<FundraisingContribution>> = env.storage().persistent().get(&key);
+    if result.is_some() {
+        bump_persistent(&env, &key);
+    }
+    result.unwrap_or(Vec::new(&env))
 }
 
 fn validate_members(members: &Vec<GroupMember>) -> Result<(), Error> {
