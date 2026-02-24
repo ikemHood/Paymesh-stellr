@@ -302,3 +302,7 @@ mod test_utils_test;
 #[cfg(test)]
 #[path = "tests/distribute_test.rs"]
 mod distribute_test;
+
+#[cfg(test)]
+#[path = "tests/earnings_test.rs"]
+mod earnings_test;
