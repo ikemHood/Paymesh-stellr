@@ -65,3 +65,71 @@ fn test_get_groups_paginated_empty() {
     assert_eq!(page.groups.len(), 0);
     assert_eq!(page.total, 0);
 }
+
+#[test]
+fn test_get_groups_by_creator_paginated() {
+    let test_env = setup_test_env();
+    let client = AutoShareContractClient::new(&test_env.env, &test_env.autoshare_contract);
+
+    let creator1 = test_env.users.get(0).unwrap().clone();
+    let creator2 = test_env.users.get(1).unwrap().clone();
+    let token = test_env.mock_tokens.get(0).unwrap().clone();
+
+    let mut members = Vec::new(&test_env.env);
+    members.push_back(crate::base::types::GroupMember {
+        address: Address::generate(&test_env.env),
+        percentage: 100,
+    });
+
+    // Creator 1 creates 15 groups
+    for i in 1..=15 {
+        create_test_group(
+            &test_env.env,
+            &test_env.autoshare_contract,
+            &creator1,
+            &members,
+            i,
+            &token,
+        );
+    }
+
+    // Creator 2 creates 10 groups
+    for i in 16..=25 {
+        create_test_group(
+            &test_env.env,
+            &test_env.autoshare_contract,
+            &creator2,
+            &members,
+            i,
+            &token,
+        );
+    }
+
+    // Test Creator 1 - first page
+    let c1_page1 = client.get_groups_by_creator_paginated(&creator1, &0, &10);
+    assert_eq!(c1_page1.groups.len(), 10);
+    assert_eq!(c1_page1.total, 15);
+    assert_eq!(c1_page1.offset, 0);
+
+    // Test Creator 1 - second page
+    let c1_page2 = client.get_groups_by_creator_paginated(&creator1, &10, &10);
+    assert_eq!(c1_page2.groups.len(), 5);
+    assert_eq!(c1_page2.total, 15);
+    assert_eq!(c1_page2.offset, 10);
+
+    // Test Creator 2 - first page
+    let c2_page1 = client.get_groups_by_creator_paginated(&creator2, &0, &5);
+    assert_eq!(c2_page1.groups.len(), 5);
+    assert_eq!(c2_page1.total, 10);
+
+    // Test limit cap for Creator 1
+    let c1_capped = client.get_groups_by_creator_paginated(&creator1, &0, &50);
+    assert_eq!(c1_capped.groups.len(), 15); // only 15 exist
+    assert_eq!(c1_capped.limit, 20);
+
+    // Test Creator 3 (none)
+    let creator3 = Address::generate(&test_env.env);
+    let c3_page = client.get_groups_by_creator_paginated(&creator3, &0, &10);
+    assert_eq!(c3_page.groups.len(), 0);
+    assert_eq!(c3_page.total, 0);
+}
