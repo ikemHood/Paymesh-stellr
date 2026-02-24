@@ -97,6 +97,16 @@ impl AutoShareContract {
         autoshare_logic::get_groups_paginated(env, offset, limit)
     }
 
+    /// Returns a paginated list of groups created by a specific address.
+    pub fn get_groups_by_creator_paginated(
+        env: Env,
+        creator: Address,
+        offset: u32,
+        limit: u32,
+    ) -> base::types::GroupPage {
+        autoshare_logic::get_groups_by_creator_paginated(env, creator, offset, limit)
+    }
+
     /// Checks if an address is a member of a specific group.
     pub fn is_group_member(env: Env, id: BytesN<32>, address: Address) -> bool {
         autoshare_logic::is_group_member(env, id, address).unwrap()
