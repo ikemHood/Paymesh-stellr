@@ -160,6 +160,43 @@ pub fn get_groups_by_creator(env: Env, creator: Address) -> Vec<AutoShareDetails
     result
 }
 
+pub fn get_groups_paginated(env: Env, offset: u32, limit: u32) -> crate::base::types::GroupPage {
+    let all_groups_key = DataKey::AllGroups;
+    let group_ids: Vec<BytesN<32>> = env
+        .storage()
+        .persistent()
+        .get(&all_groups_key)
+        .unwrap_or(Vec::new(&env));
+
+    let total = group_ids.len();
+
+    // Cap limit at 20 as per requirement
+    let mut actual_limit = limit;
+    if actual_limit > 20 {
+        actual_limit = 20;
+    }
+
+    let mut groups: Vec<AutoShareDetails> = Vec::new(&env);
+
+    if offset < total {
+        let end = (offset + actual_limit).min(total);
+        for i in offset..end {
+            if let Some(id) = group_ids.get(i) {
+                if let Ok(details) = get_autoshare(env.clone(), id) {
+                    groups.push_back(details);
+                }
+            }
+        }
+    }
+
+    crate::base::types::GroupPage {
+        groups,
+        total,
+        offset,
+        limit: actual_limit,
+    }
+}
+
 pub fn is_group_member(env: Env, id: BytesN<32>, address: Address) -> Result<bool, Error> {
     let details = get_autoshare(env, id)?;
 

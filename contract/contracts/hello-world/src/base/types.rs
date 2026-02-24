@@ -47,3 +47,12 @@ pub struct DistributionHistory {
     pub timestamp: u64,
     pub distribution_number: u32,
 }
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GroupPage {
+    pub groups: Vec<AutoShareDetails>,
+    pub total: u32,
+    pub offset: u32,
+    pub limit: u32,
+}
