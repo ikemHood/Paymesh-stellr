@@ -6,7 +6,7 @@ use crate::base::events::{
 };
 use crate::base::types::{
     AutoShareDetails, DistributionHistory, FundraisingConfig, FundraisingContribution, GroupMember,
-    MemberAmount, PaymentHistory,
+    GroupStats, MemberAmount, PaymentHistory,
 };
 use soroban_sdk::{contracttype, token, Address, BytesN, Env, String, Vec};
 
@@ -25,6 +25,7 @@ pub enum DataKey {
     GroupFundraising(BytesN<32>),
     GroupContributions(BytesN<32>),
     UserContributions(Address),
+    GroupStats(BytesN<32>),
     IsPaused,
 }
 
@@ -1213,32 +1214,7 @@ pub fn distribute(
     let client = token::TokenClient::new(&env, &token);
     client.transfer(&sender, &env.current_contract_address(), &amount);
 
-    let mut distributed: i128 = 0;
-    let members_len = details.members.len() as usize;
-    let mut member_amounts: Vec<MemberAmount> = Vec::new(&env);
-    for (idx, member) in details.members.iter().enumerate() {
-        let share = if idx + 1 < members_len {
-            (amount * (member.percentage as i128)) / 100
-        } else {
-            amount - distributed
-        };
-        if share > 0 {
-            client.transfer(&env.current_contract_address(), &member.address, &share);
-            distributed += share;
-            member_amounts.push_back(MemberAmount {
-                address: member.address.clone(),
-                amount: share,
-            });
-
-            // Update running total for member group earnings
-            let earnings_key = DataKey::MemberGroupEarnings(member.address.clone(), id.clone());
-            let current_earnings: i128 = env.storage().persistent().get(&earnings_key).unwrap_or(0);
-            env.storage()
-                .persistent()
-                .set(&earnings_key, &(current_earnings + share));
-            bump_persistent(&env, &earnings_key);
-        }
-    }
+    let member_amounts = perform_distribution(&env, &id, &token, amount, &details.members);
 
     let distribution_number = details.total_usages_paid - details.usage_count;
     record_distribution(
@@ -1264,6 +1240,43 @@ pub fn distribute(
     .publish(&env);
 
     Ok(())
+}
+
+fn perform_distribution(
+    env: &Env,
+    id: &BytesN<32>,
+    token: &Address,
+    amount: i128,
+    members: &Vec<GroupMember>,
+) -> Vec<MemberAmount> {
+    let client = token::TokenClient::new(env, token);
+    let mut distributed: i128 = 0;
+    let members_len = members.len() as usize;
+    let mut member_amounts: Vec<MemberAmount> = Vec::new(env);
+    for (idx, member) in members.iter().enumerate() {
+        let share = if idx + 1 < members_len {
+            (amount * (member.percentage as i128)) / 100
+        } else {
+            amount - distributed
+        };
+        if share > 0 {
+            client.transfer(&env.current_contract_address(), &member.address, &share);
+            distributed += share;
+            member_amounts.push_back(MemberAmount {
+                address: member.address.clone(),
+                amount: share,
+            });
+
+            // Update running total for member group earnings
+            let earnings_key = DataKey::MemberGroupEarnings(member.address.clone(), id.clone());
+            let current_earnings: i128 = env.storage().persistent().get(&earnings_key).unwrap_or(0);
+            env.storage()
+                .persistent()
+                .set(&earnings_key, &(current_earnings + share));
+            bump_persistent(env, &earnings_key);
+        }
+    }
+    member_amounts
 }
 
 pub fn get_member_earnings(env: Env, member: Address, group_id: BytesN<32>) -> i128 {
@@ -1397,6 +1410,130 @@ pub fn start_fundraising(
     FundraisingStarted {
         group_id: id,
         target_amount,
+    }
+    .publish(&env);
+
+    Ok(())
+}
+
+pub fn contribute(
+    env: Env,
+    id: BytesN<32>,
+    token: Address,
+    amount: i128,
+    contributor: Address,
+) -> Result<(), Error> {
+    contributor.require_auth();
+
+    if get_paused_status(&env) {
+        return Err(Error::ContractPaused);
+    }
+
+    if amount <= 0 {
+        return Err(Error::InvalidAmount);
+    }
+
+    if !is_token_supported(env.clone(), token.clone()) {
+        return Err(Error::UnsupportedToken);
+    }
+
+    // Verify group exists and is active
+    let group_key = DataKey::AutoShare(id.clone());
+    let group_details: AutoShareDetails = env
+        .storage()
+        .persistent()
+        .get(&group_key)
+        .ok_or(Error::NotFound)?;
+    bump_persistent(&env, &group_key);
+
+    if !group_details.is_active {
+        return Err(Error::GroupInactive);
+    }
+
+    // Verify fundraising is active
+    let fundraising_key = DataKey::GroupFundraising(id.clone());
+    let mut fundraising_config: FundraisingConfig = env
+        .storage()
+        .persistent()
+        .get(&fundraising_key)
+        .ok_or(Error::FundraisingNotActive)?;
+
+    if !fundraising_config.is_active {
+        return Err(Error::FundraisingNotActive);
+    }
+    bump_persistent(&env, &fundraising_key);
+
+    // Transfer amount from contributor to the contract
+    let token_client = token::Client::new(&env, &token);
+    token_client.transfer(&contributor, env.current_contract_address(), &amount);
+
+    // Distribute funds to group members
+    perform_distribution(&env, &id, &token, amount, &group_details.members);
+
+    // Update fundraising total
+    fundraising_config.total_raised += amount;
+    if fundraising_config.total_raised >= fundraising_config.target_amount {
+        fundraising_config.is_active = false;
+    }
+    env.storage()
+        .persistent()
+        .set(&fundraising_key, &fundraising_config);
+    bump_persistent(&env, &fundraising_key);
+
+    // Record contribution
+    let contribution = FundraisingContribution {
+        group_id: id.clone(),
+        contributor: contributor.clone(),
+        token: token.clone(),
+        amount,
+        timestamp: env.ledger().timestamp(),
+    };
+
+    let group_contributions_key = DataKey::GroupContributions(id.clone());
+    let mut group_contributions: Vec<FundraisingContribution> = env
+        .storage()
+        .persistent()
+        .get(&group_contributions_key)
+        .unwrap_or(Vec::new(&env));
+    group_contributions.push_back(contribution.clone());
+    env.storage()
+        .persistent()
+        .set(&group_contributions_key, &group_contributions);
+    bump_persistent(&env, &group_contributions_key);
+
+    let user_contributions_key = DataKey::UserContributions(contributor.clone());
+    let mut user_contributions: Vec<FundraisingContribution> = env
+        .storage()
+        .persistent()
+        .get(&user_contributions_key)
+        .unwrap_or(Vec::new(&env));
+    user_contributions.push_back(contribution);
+    env.storage()
+        .persistent()
+        .set(&user_contributions_key, &user_contributions);
+    bump_persistent(&env, &user_contributions_key);
+
+    // Update group stats
+    let stats_key = DataKey::GroupStats(id.clone());
+    let mut stats: GroupStats = env
+        .storage()
+        .persistent()
+        .get(&stats_key)
+        .unwrap_or(GroupStats {
+            total_raised: 0,
+            contribution_count: 0,
+        });
+    stats.total_raised += amount;
+    stats.contribution_count += 1;
+    env.storage().persistent().set(&stats_key, &stats);
+    bump_persistent(&env, &stats_key);
+
+    // Emit event
+    crate::base::events::Contribution {
+        group_id: id,
+        contributor,
+        token,
+        amount,
     }
     .publish(&env);
 

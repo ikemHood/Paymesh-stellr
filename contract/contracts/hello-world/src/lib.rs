@@ -317,6 +317,17 @@ impl AutoShareContract {
     pub fn start_fundraising(env: Env, id: BytesN<32>, caller: Address, target_amount: i128) {
         autoshare_logic::start_fundraising(env, id, caller, target_amount).unwrap();
     }
+
+    /// Contributes funds to a fundraising campaign.
+    pub fn contribute(
+        env: Env,
+        id: BytesN<32>,
+        token: Address,
+        amount: i128,
+        contributor: Address,
+    ) {
+        autoshare_logic::contribute(env, id, token, amount, contributor).unwrap();
+    }
 }
 
 // 3. Link the tests (Requirement: Unit Tests)
@@ -359,3 +370,7 @@ mod fundraising_test;
 #[cfg(test)]
 #[path = "tests/fundraising_start_test.rs"]
 mod fundraising_start_test;
+
+#[cfg(test)]
+#[path = "tests/fundraising_contribute_test.rs"]
+mod fundraising_contribute_test;

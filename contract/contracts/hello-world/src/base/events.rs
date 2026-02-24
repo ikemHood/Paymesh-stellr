@@ -92,3 +92,14 @@ pub struct FundraisingStarted {
     pub group_id: BytesN<32>,
     pub target_amount: i128,
 }
+
+#[contractevent]
+#[derive(Clone)]
+pub struct Contribution {
+    #[topic]
+    pub group_id: BytesN<32>,
+    #[topic]
+    pub contributor: Address,
+    pub token: Address,
+    pub amount: i128,
+}

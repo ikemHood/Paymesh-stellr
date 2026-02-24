@@ -29,4 +29,5 @@ pub enum Error {
     GroupNotDeactivated = 23,
     EmptyName = 24,
     FundraisingAlreadyActive = 32,
+    FundraisingNotActive = 33,
 }

@@ -184,4 +184,7 @@ pub trait AutoShareTrait {
 
     /// Starts a fundraising campaign for a group.
     fn start_fundraising(env: Env, id: BytesN<32>, caller: Address, target_amount: i128);
+
+    /// Contributes funds to a fundraising campaign.
+    fn contribute(env: Env, id: BytesN<32>, token: Address, amount: i128, contributor: Address);
 }

@@ -74,3 +74,10 @@ pub struct FundraisingContribution {
     pub amount: i128,
     pub timestamp: u64,
 }
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GroupStats {
+    pub total_raised: i128,
+    pub contribution_count: u32,
+}
