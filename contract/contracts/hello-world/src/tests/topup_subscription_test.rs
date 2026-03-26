@@ -1,5 +1,3 @@
-
-
 use crate::test_utils::{assert_balance, create_test_group, mint_tokens, setup_test_env};
 use crate::AutoShareContractClient;
 use soroban_sdk::{testutils::Address as _, Address, BytesN, Vec};
