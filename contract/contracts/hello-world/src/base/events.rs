@@ -15,7 +15,8 @@ pub fn emit_distribution(
         sender: sender.clone(),
         amount,
         member_count,
-    }.publish(env);
+    }
+    .publish(env);
 }
 
 /// Emitted when someone contributes to a fundraiser.
@@ -31,9 +32,9 @@ pub fn emit_contribution(
         contributor: contributor.clone(),
         token: token.clone(),
         amount,
-    }.publish(env);
+    }
+    .publish(env);
 }
-
 
 #[contractevent(data_format = "single-value")]
 #[derive(Clone)]
@@ -136,7 +137,8 @@ pub fn emit_member_added(env: &Env, group_id: BytesN<32>, member: Address, perce
         group_id,
         member,
         percentage,
-    }.publish(env);
+    }
+    .publish(env);
 }
 
 #[contractevent(data_format = "single-value")]

@@ -183,7 +183,10 @@ fn test_large_amounts_no_overflow() {
 
     assert_eq!(client.get_member_earnings(&member1, &id), large_amount / 2);
     // Last member gets the rest
-    assert_eq!(client.get_member_earnings(&member2, &id), large_amount - (large_amount / 2));
+    assert_eq!(
+        client.get_member_earnings(&member2, &id),
+        large_amount - (large_amount / 2)
+    );
 }
 
 #[test]

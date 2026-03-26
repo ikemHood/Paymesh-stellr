@@ -1,6 +1,9 @@
 use crate::test_utils::{create_test_group, create_test_members, mint_tokens, setup_test_env};
 use crate::AutoShareContractClient;
-use soroban_sdk::{testutils::{Events, Address as _}, Address, FromVal, Symbol};
+use soroban_sdk::{
+    testutils::{Address as _, Events},
+    Address, FromVal, Symbol,
+};
 
 #[test]
 fn test_token_added_event() {
@@ -73,8 +76,14 @@ fn test_fundraising_completed_event() {
     let token = test_env.mock_tokens.get(0).unwrap();
 
     let members = create_test_members(env, 2);
-    let group_id =
-        create_test_group(env, &test_env.autoshare_contract, &creator, &members, 10, &token);
+    let group_id = create_test_group(
+        env,
+        &test_env.autoshare_contract,
+        &creator,
+        &members,
+        10,
+        &token,
+    );
 
     env.mock_all_auths();
 
