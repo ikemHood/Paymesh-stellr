@@ -456,3 +456,11 @@ mod topup_subscription_test;
 
 #[path = "tests/get_active_groups_test.rs"]
 mod get_active_groups_test;
+
+#[cfg(test)]
+#[path = "tests/distribution_rounding_test.rs"]
+mod distribution_rounding_test;
+
+#[cfg(test)]
+#[path = "tests/event_emission_test.rs"]
+mod event_emission_test;
