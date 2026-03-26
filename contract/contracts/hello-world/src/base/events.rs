@@ -158,3 +158,55 @@ pub struct Contribution {
     pub token: Address,
     pub amount: i128,
 }
+
+#[contractevent]
+#[derive(Clone)]
+pub struct TokenAdded {
+    #[topic]
+    pub admin: Address,
+    #[topic]
+    pub token: Address,
+}
+
+pub fn emit_token_added(env: &Env, admin: Address, token: Address) {
+    TokenAdded { admin, token }.publish(env);
+}
+
+#[contractevent]
+#[derive(Clone)]
+pub struct TokenRemoved {
+    #[topic]
+    pub admin: Address,
+    #[topic]
+    pub token: Address,
+}
+
+pub fn emit_token_removed(env: &Env, admin: Address, token: Address) {
+    TokenRemoved { admin, token }.publish(env);
+}
+
+#[contractevent]
+#[derive(Clone)]
+pub struct FundraisingCompleted {
+    #[topic]
+    pub group_id: BytesN<32>,
+    pub target_amount: i128,
+    pub total_raised: i128,
+    pub contribution_count: u32,
+}
+
+pub fn emit_fundraising_completed(
+    env: &Env,
+    group_id: BytesN<32>,
+    target_amount: i128,
+    total_raised: i128,
+    contribution_count: u32,
+) {
+    FundraisingCompleted {
+        group_id,
+        target_amount,
+        total_raised,
+        contribution_count,
+    }
+    .publish(env);
+}
